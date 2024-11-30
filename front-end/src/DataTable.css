@@ -1,0 +1,128 @@
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  margin: 0 auto;
+  font-size: 14px;
+  color: black;
+  font-weight: bolder;
+}
+
+.table-wrapper {
+  min-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 15px; /* Espacio para la barra de desplazamiento */
+}
+
+table {
+  min-width: 1500px; /* Asegura un ancho mínimo para todas las columnas */
+  width: 100%;
+  table-layout: fixed; /* Ayuda a mantener anchos de columna consistentes */
+}
+
+th, td {
+  min-width: 20px; /* Ancho mínimo para cada columna */
+  /* white-space: nowrap; */
+  overflow: hidden;
+  /* text-overflow: ellipsis; Muestra ... cuando el texto es muy largo */
+  background-color: #f2f2f2;
+  color: black;
+}
+
+button {
+  margin: 0 5px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:first-child {
+  background-color: #4caf50;
+  color: white;
+}
+
+button:last-child {
+  background-color: #f44336;
+  color: white;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+.pagination {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+}
+
+.pagination button {
+  padding: 8px 16px;
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.pagination button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.pagination span {
+  font-size: 14px;
+}
+
+.edit-button {
+  background-color: #2196f3;
+  color: white;
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.edit-button:hover {
+  background-color: #1976d2;
+}
+/* Estilos para dispositivos móviles */
+@media screen and (max-width: 768px) {
+  .table-container {
+    margin: 0;
+    padding: 10px;
+    width: 100%;
+  }
+
+  table {
+    display: block;
+    font-size: 12px;
+  }
+
+  /* Hacer que la tabla se pueda desplazar horizontalmente */
+  .table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Ajustar el tamaño de los botones en móvil */
+  .edit-button {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  /* Ajustar la paginación en móvil */
+  .pagination {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .pagination button {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
