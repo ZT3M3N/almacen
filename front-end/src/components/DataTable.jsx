@@ -14,32 +14,53 @@ function DataTable() {
     codigoRelacionado: "",
     cantidadPedida: "",
     cantidadVerificada: "",
+    diferencia: "",
     descripcion_producto: "",
     codigoFamiliaUno: "",
     existencia: "",
     localizacion: "",
     descripcion_laboratorio: "",
     descripcion_clasificacion: "",
-    descripcion_presentacion: ""
-});
+    descripcion_presentacion: "",
+  });
 
   const [debouncedFilters, setDebouncedFilters] = useState(filters);
 
   const [editingItem, setEditingItem] = useState(null);
 
   const handleEdit = (item) => {
-    setEditingItem(item);
+    console.log("Item a editar:", item); // Para debugging
+    setEditingItem({
+      ...item,
+      id: item.id, // Aseguramos que se incluya el ID
+      folioPedido: item.folioPedido,
+    });
   };
 
-  const handleSave = async (updatedItem) => {
+  const handleSave = async (editedItem) => {
     try {
-      await updateItem(updatedItem.FOLIOPEDIDO, updatedItem);
+      console.log("Guardando item:", editedItem);
+      const response = await updateItem(editedItem.id, editedItem);
+
+      // Actualizar el estado local con los datos actualizados
+      setItems(
+        items.map((item) =>
+          item.id === editedItem.id
+            ? {
+                ...item,
+                cantidadVerificada: editedItem.cantidadVerificada,
+              }
+            : item
+        )
+      );
+
       setEditingItem(null);
-      // Recargar los datos
-      fetchData(currentPage, debouncedFilters);
+
+      // Opcional: Mostrar un mensaje de éxito
+      console.log("Actualización exitosa:", response.message);
     } catch (error) {
       console.error("Error al guardar:", error);
-      alert("Error al guardar los cambios");
+      // Opcional: Mostrar un mensaje de error al usuario
     }
   };
 
@@ -89,20 +110,20 @@ function DataTable() {
 
   const clearFilters = () => {
     setFilters({
-        folioPedido: "",
-        codigoRelacionado: "",
-        cantidadPedida: "",
-        cantidadVerificada: "",
-        descripcion_producto: "",
-        codigoFamiliaUno: "",
-        existencia: "",
-        localizacion: "",
-        descripcion_laboratorio: "",
-        descripcion_clasificacion: "",
-        descripcion_presentacion: ""
+      folioPedido: "",
+      codigoRelacionado: "",
+      cantidadPedida: "",
+      cantidadVerificada: "",
+      descripcion_producto: "",
+      codigoFamiliaUno: "",
+      existencia: "",
+      localizacion: "",
+      descripcion_laboratorio: "",
+      descripcion_clasificacion: "",
+      descripcion_presentacion: "",
     });
     setCurrentPage(1);
-};
+  };
 
   if (loading) {
     return <div className="loading">Cargando datos...</div>;
@@ -116,64 +137,85 @@ function DataTable() {
         </button>
       </div>
       <div className="table-container">
-      <div className="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Folio Pedido</th>
-              <th>Código Relacionado</th>
-              <th>Cantidad Pedida</th>
-              <th>Cantidad Verificada</th>
-              <th>Producto</th>
-              <th>Familia</th>
-              <th>Existencia</th>
-              <th>Localización</th>
-              <th>Laboratorio</th>
-              <th>Clasificación</th>
-              <th>Presentación</th>
-              <th></th>
-            </tr>
-            <tr>
-              {Object.keys(filters).map((column) => (
-                <th key={column}>
-                  <input
-                    type="text"
-                    value={filters[column]}
-                    onChange={(e) => handleFilterChange(column, e.target.value)}
-                    placeholder={`Buscar...`}
-                    className="filter-input"
-                  />
-                </th>
-              ))}
-              <th></th> {/* Celda vacía para acciones */}
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr key={item.ROW_ID}>
-                <td>{item.folioPedido}</td>
-                <td>{item.codigoRelacionado}</td>
-                <td>{item.cantidadPedida}</td>
-                <td>{item.cantidadVerificada}</td>
-                <td>{item.descripcion_producto}</td>
-                <td>{item.codigoFamiliaUno}</td>
-                <td>{item.existencia}</td>
-                <td>{item.localizacion}</td>
-                <td>{item.descripcion_laboratorio}</td>
-                <td>{item.descripcion_clasificacion}</td>
-                <td>{item.descripcion_presentacion}</td>
-                <td>
-                  <button
-                    className="edit-button"
-                    onClick={() => handleEdit(item)}
-                  >
-                    Editar
-                  </button>
-                </td>
+        <div className="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Folio Pedido</th>
+                <th>Código Relacionado</th>
+                <th>Cantidad Pedida</th>
+                <th>Cantidad Verificada</th>
+                <th>Diferencia</th>
+                <th>Producto</th>
+                <th>Familia</th>
+                <th>Existencia</th>
+                <th>Localización</th>
+                <th>Laboratorio</th>
+                <th>Clasificación</th>
+                <th>Presentación</th>
+                <th></th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+              <tr>
+                {Object.keys(filters).map((column) => (
+                  <th key={`filter-${column}`}>
+                    <input
+                      type="text"
+                      value={filters[column]}
+                      onChange={(e) =>
+                        handleFilterChange(column, e.target.value)
+                      }
+                      placeholder={`Buscar...`}
+                      className="filter-input"
+                    />
+                  </th>
+                ))}
+                <th key="filter-actions"></th> {/* Celda vacía para acciones */}
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((item) => {
+                const isEqual =
+                  Number(item.cantidadPedida) ===
+                  Number(item.cantidadVerificada);
+
+                return (
+                  <tr
+                    key={item.id}
+                    style={{
+                      backgroundColor: isEqual ? "#d4edda" : "#f8d7da", // Verde claro o rojo claro
+                      color: isEqual ? "#155724" : "#721c24", // Texto verde oscuro o rojo oscuro
+                    }}
+                  >
+                    <td>{item.folioPedido}</td>
+                    <td>{item.codigoRelacionado}</td>
+                    <td>{item.cantidadPedida}</td>
+                    <td>{item.cantidadVerificada}</td>
+                    <td>
+                      {
+                        (item.diferencia =
+                          item.cantidadPedida - item.cantidadVerificada)
+                      }
+                    </td>
+                    <td>{item.descripcion_producto}</td>
+                    <td>{item.codigoFamiliaUno}</td>
+                    <td>{item.existencia}</td>
+                    <td>{item.localizacion}</td>
+                    <td>{item.descripcion_laboratorio}</td>
+                    <td>{item.descripcion_clasificacion}</td>
+                    <td>{item.descripcion_presentacion}</td>
+                    <td>
+                      <button
+                        className="edit-button"
+                        onClick={() => handleEdit(item)}
+                      >
+                        Editar
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
         {editingItem && (
           <EditModal
@@ -190,7 +232,7 @@ function DataTable() {
         >
           Anterior
         </button>
-        <span>
+        <span className="">
           Página {currentPage} de {totalPages}
         </span>
         <button

@@ -29,7 +29,7 @@ def migrate_data():
 
     # Conectar a SQLite y Migrar Datos
     sqlite_conn = get_sqlite_connection()
-    data.to_sql("folios", sqlite_conn, if_exists="append", index=False)
+    data.to_sql("folios", sqlite_conn, if_exists="append", index=True, index_label="id")
     sqlite_conn.close()
     print("Migración completada.")
 

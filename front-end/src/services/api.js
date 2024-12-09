@@ -2,6 +2,7 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: `http://${window.location.hostname}:5000`,
+  timeout: 5000,
 });
 
 export const getData = async (page = 1, perPage = 100, filters = {}) => {
@@ -30,16 +31,16 @@ export const deleteRecord = async (id) => {
   }
 };
 
-export const updateItem = async (folioPedido, data) => {
-  try {
-    const updateData = {
-      CANTIDADPEDIDA: data.cantidadPedida,
-      PZVERIFICADA: data.cantidadVerificada,
-      EXISTENCIA: data.existencia,
-      LOCALIZACION: data.localizacion,
-    };
+export const updateItem = async (id, data) => {
+  if (!id) {
+    throw new Error("ID es requerido");
+  }
 
-    const response = await api.put(`/data/${folioPedido}`, updateData);
+  try {
+    console.log("Enviando actualización:", { id, data });
+    const response = await api.put(`/data/${id}`, {
+      cantidadVerificada: data.cantidadVerificada,
+    });
     return response.data;
   } catch (error) {
     console.error("Error updating item:", error);
