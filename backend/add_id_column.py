@@ -7,6 +7,9 @@ def add_id_column():
     cursor = conn.cursor()
 
     try:
+        # Verificar si existe la tabla temporal y eliminarla si es necesario
+        cursor.execute("DROP TABLE IF EXISTS folios_temp")
+
         # 1. Renombrar la tabla actual
         cursor.execute("ALTER TABLE folios RENAME TO folios_temp")
 
@@ -25,8 +28,7 @@ def add_id_column():
                 descripcion_laboratorio TEXT,
                 descripcion_clasificacion TEXT,
                 descripcion_presentacion TEXT,
-                codigoRelacionado TEXT,
-                alias TEXT
+                codigoRelacionado TEXT
             )
         """
         )
@@ -39,20 +41,20 @@ def add_id_column():
                 existencia, localizacion, descripcion_producto,
                 codigoFamiliaUno, descripcion_laboratorio,
                 descripcion_clasificacion, descripcion_presentacion,
-                codigoRelacionado, alias
+                codigoRelacionado
             )
             SELECT 
                 folioPedido, cantidadPedida, cantidadVerificada,
                 existencia, localizacion, descripcion_producto,
                 codigoFamiliaUno, descripcion_laboratorio,
                 descripcion_clasificacion, descripcion_presentacion,
-                codigoRelacionado, alias
+                codigoRelacionado
             FROM folios_temp
         """
         )
 
         # 4. Eliminar tabla temporal
-        cursor.execute("DROP TABLE folios_temp")
+        cursor.execute("DROP TABLE IF EXISTS folios_temp")
 
         conn.commit()
         print("Columna ID agregada exitosamente")
@@ -60,6 +62,12 @@ def add_id_column():
     except sqlite3.Error as e:
         print(f"Error: {e}")
         conn.rollback()
+        # Asegurarse de eliminar la tabla temporal si existe
+        try:
+            cursor.execute("DROP TABLE IF EXISTS folios_temp")
+            conn.commit()
+        except:
+            pass
     finally:
         conn.close()
 

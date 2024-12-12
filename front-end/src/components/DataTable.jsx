@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getData, updateItem } from "../services/api";
+import { getData, updateItem, syncDatabase } from "../services/api";
 import EditModal from "./EditModal";
 import "../DataTable.css";
 
@@ -8,6 +8,41 @@ function DataTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Función para determinar si es móvil
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth >= 320 && window.innerWidth <= 600);
+    };
+
+    // Chequear al montar el componente
+    checkMobile();
+
+    // Añadir event listener para cambios de tamaño
+    window.addEventListener("resize", checkMobile);
+
+    // Limpiar el event listener
+    return () => {
+      window.removeEventListener("resize", checkMobile);
+    };
+  }, []);
+
+  // Mapeo de placeholders para móviles
+  const mobilePlaceholders = {
+    folioPedido: "Buscar por folio",
+    codigoRelacionado: "Buscar por código",
+    cantidadPedida: "Buscar por  cantidad pedida",
+    cantidadVerificada: "Buscar por cantidad verificada",
+    diferencia: "Buscar por diferencia",
+    descripcion_producto: "Buscar por producto",
+    codigoFamiliaUno: "Buscar por familia",
+    existencia: "Buscar por existencia",
+    localizacion: "Buscar por localización",
+    descripcion_laboratorio: "Buscar por laboratorio",
+    descripcion_clasificacion: "Buscar por clasificación",
+    descripcion_presentacion: "Buscar por presentación",
+  };
 
   const [filters, setFilters] = useState({
     folioPedido: "",
@@ -100,6 +135,20 @@ function DataTable() {
     }
   };
 
+  const handleSync = async () => {
+    try {
+      setLoading(true);
+      await syncDatabase();
+      // Recargar los datos después de la sincronización
+      await fetchData(currentPage, debouncedFilters);
+      alert("Base de datos sincronizada exitosamente");
+    } catch (error) {
+      console.error("Error en la sincronización:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleFilterChange = (column, value) => {
     setFilters((prev) => ({
       ...prev,
@@ -135,6 +184,9 @@ function DataTable() {
         <button onClick={clearFilters} className="clear-filters-btn">
           Limpiar filtros
         </button>
+        <button onClick={handleSync} className="sync-button">
+          Sincronizar base de datos
+        </button>
       </div>
       <div className="table-container">
         <div className="table-wrapper">
@@ -164,12 +216,16 @@ function DataTable() {
                       onChange={(e) =>
                         handleFilterChange(column, e.target.value)
                       }
-                      placeholder={`Buscar...`}
+                      placeholder={
+                        isMobile
+                          ? mobilePlaceholders[column] || "Buscar..."
+                          : "Buscar..."
+                      }
                       className="filter-input"
                     />
                   </th>
                 ))}
-                <th key="filter-actions"></th> {/* Celda vacía para acciones */}
+                <th key="filter-actions"></th>
               </tr>
             </thead>
             <tbody>
@@ -182,28 +238,35 @@ function DataTable() {
                   <tr
                     key={item.id}
                     style={{
-                      backgroundColor: isEqual ? "#d4edda" : "#f8d7da", // Verde claro o rojo claro
-                      color: isEqual ? "#155724" : "#721c24", // Texto verde oscuro o rojo oscuro
+                      backgroundColor: isEqual ? "#00ff3d" : "#ff9ca5",
+                      color: isEqual ? "#155724" : "#721c24",
                     }}
                   >
-                    <td>{item.folioPedido}</td>
-                    <td>{item.codigoRelacionado}</td>
-                    <td>{item.cantidadPedida}</td>
-                    <td>{item.cantidadVerificada}</td>
-                    <td>
-                      {
-                        (item.diferencia =
-                          item.cantidadPedida - item.cantidadVerificada)
-                      }
+                    <td data-label="Folio Pedido">{item.folioPedido}</td>
+                    <td data-label="Código Relacionado">
+                      {item.codigoRelacionado}
                     </td>
-                    <td>{item.descripcion_producto}</td>
-                    <td>{item.codigoFamiliaUno}</td>
-                    <td>{item.existencia}</td>
-                    <td>{item.localizacion}</td>
-                    <td>{item.descripcion_laboratorio}</td>
-                    <td>{item.descripcion_clasificacion}</td>
-                    <td>{item.descripcion_presentacion}</td>
-                    <td>
+                    <td data-label="Cantidad Pedida">{item.cantidadPedida}</td>
+                    <td data-label="Cantidad Verificada">
+                      {item.cantidadVerificada}
+                    </td>
+                    <td data-label="Diferencia">
+                      {item.cantidadPedida - item.cantidadVerificada}
+                    </td>
+                    <td data-label="Producto">{item.descripcion_producto}</td>
+                    <td data-label="Familia">{item.codigoFamiliaUno}</td>
+                    <td data-label="Existencia">{item.existencia}</td>
+                    <td data-label="Localización">{item.localizacion}</td>
+                    <td data-label="Laboratorio">
+                      {item.descripcion_laboratorio}
+                    </td>
+                    <td data-label="Clasificación">
+                      {item.descripcion_clasificacion}
+                    </td>
+                    <td data-label="Presentación">
+                      {item.descripcion_presentacion}
+                    </td>
+                    <td data-label="Acciones">
                       <button
                         className="edit-button"
                         onClick={() => handleEdit(item)}

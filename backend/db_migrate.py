@@ -4,34 +4,52 @@ from database.sqlite_connection import get_sqlite_connection
 
 
 def migrate_data():
-    # Conectar a MSSQL
-    mssql_conn = get_mssql_connection()
-    query = """select vp.*,
-        c.alias,
-        p.descripcion as descripcion_producto,
-        p.codigoFamiliaUno, 
-        e.existencia,
-        e.localizacion, 
-        l.descripcion as descripcion_laboratorio,
-        cl.descripcion as descripcion_clasificacion,
-        pr.descripcion as descripcion_presentacion
-    from venPedidosDet vp
-    inner join genProductosCat p on vp.codigoProducto = p.codigoProducto
-    inner join invControlExistenciasReg e on vp.codigoProducto = e.codigoProducto
-    inner join genLaboratoriosCat l on p.codigoLaboratorio = l.codigoLaboratorio
-    inner join genClasificacionesSsaCat cl on p.codigoClasificacionUno = cl.codigoClasificacionUno 
-        and p.codigoClasificacionDos = cl.codigoClasificacionDos
-    inner join imePresentacionesCat pr on p.codigoPresentacion = pr.codigoPresentacion
-    inner join cxcClientesCat c on vp.codigoCliente = c.codigoCliente"""
+    try:
+        # Obtener datos del SQL Server
+        mssql_conn = get_mssql_connection()
+        query = """SELECT 
+            folioPedido, cantidadPedida, cantidadVerificada,
+            existencia, localizacion, descripcion_producto,
+            codigoFamiliaUno, descripcion_laboratorio,
+            descripcion_clasificacion, descripcion_presentacion,
+            codigoRelacionado
+        FROM vista_folios"""
+        new_data = pd.read_sql(query, mssql_conn)
+        mssql_conn.close()
 
-    data = pd.read_sql(query, mssql_conn)
-    mssql_conn.close()
+        # Conectar a SQLite
+        sqlite_conn = get_sqlite_connection()
 
-    # Conectar a SQLite y Migrar Datos
-    sqlite_conn = get_sqlite_connection()
-    data.to_sql("folios", sqlite_conn, if_exists="append", index=True, index_label="id")
-    sqlite_conn.close()
-    print("Migración completada.")
+        # Obtener registros existentes en SQLite
+        existing_data = pd.read_sql("SELECT * FROM folios", sqlite_conn)
+
+        # Crear una clave compuesta para comparación
+        def create_composite_key(row):
+            return f"{row['folioPedido']}_{row['cantidadPedida']}_{row['cantidadVerificada']}_\
+                    {row['existencia']}_{row['localizacion']}_{row['codigoRelacionado']}"
+
+        # Crear claves compuestas para ambos conjuntos de datos
+        existing_keys = set(existing_data.apply(create_composite_key, axis=1))
+        new_keys = new_data.apply(create_composite_key, axis=1)
+
+        # Filtrar solo los registros realmente nuevos
+        mask = ~new_keys.isin(existing_keys)
+        records_to_insert = new_data[mask]
+
+        if len(records_to_insert) > 0:
+            # Insertar solo los nuevos registros
+            records_to_insert.to_sql(
+                "folios", sqlite_conn, if_exists="append", index=False
+            )
+            print(f"Se agregaron {len(records_to_insert)} nuevos registros")
+        else:
+            print("No hay nuevos registros para agregar")
+
+        sqlite_conn.close()
+        return True, "Sincronización completada exitosamente"
+
+    except Exception as e:
+        return False, f"Error durante la sincronización: {str(e)}"
 
 
 if __name__ == "__main__":

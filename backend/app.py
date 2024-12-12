@@ -41,9 +41,6 @@ def test_endpoint():
     except Exception as e:
         return jsonify({"error": f"Error: {str(e)}"}), 500
 
-
-@app.route("/debug", methods=["GET"])
-def debug_connection():
     try:
         conn = get_sqlite_connection()
         cursor = conn.cursor()
@@ -215,6 +212,20 @@ def update_item(id):
     except Exception as e:
         print(f"Error general: {e}")
         return jsonify({"error": f"Error: {str(e)}"}), 500
+
+
+@app.route("/sync", methods=["POST"])
+def sync_database():
+    try:
+        from db_migrate import migrate_data
+
+        from add_id_column import add_id_column
+
+        migrate_data()
+        add_id_column()
+        return jsonify({"message": "Base de datos sincronizada exitosamente"}), 200
+    except Exception as e:
+        return jsonify({"error": f"Error durante la sincronización: {str(e)}"}), 500
 
 
 if __name__ == "__main__":

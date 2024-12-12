@@ -2,7 +2,8 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: `http://${window.location.hostname}:5000`,
-  timeout: 5000,
+  // baseURL: `https://7mbmd9mj-5000.usw3.devtunnels.ms/`,
+  timeout: 200000,
 });
 
 export const getData = async (page = 1, perPage = 100, filters = {}) => {
@@ -53,6 +54,16 @@ export const createRecord = async (data) => {
     await api.post("/data", data);
   } catch (error) {
     console.error("Error creating record:", error);
+    throw error;
+  }
+};
+
+export const syncDatabase = async () => {
+  try {
+    const response = await api.post("/sync");
+    return response.data;
+  } catch (error) {
+    console.error("Error sincronizando la base de datos:", error);
     throw error;
   }
 };
